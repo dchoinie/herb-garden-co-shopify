@@ -2,6 +2,7 @@ import React, { JSX } from 'react'
 import Hero from '@/components/hero'
 import Marquee from '@/components/marquee'
 import FeaturedProduct from '@/components/featuredProduct'
+import Features from '@/components/features'
 
 const Page = (): JSX.Element => {
   return (
@@ -38,6 +39,7 @@ const Page = (): JSX.Element => {
           buttonTextColor="text-white"
         />
       </div>
+      <Features />
     </div>
   )
 }
