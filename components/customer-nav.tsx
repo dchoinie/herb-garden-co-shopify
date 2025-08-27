@@ -221,6 +221,7 @@ export function CustomerNav({ session }: CustomerNavProps) {
       <UserAccountModal
         isOpen={isUserModalOpen}
         onClose={() => setIsUserModalOpen(false)}
+        session={session}
       />
     </div>
   );

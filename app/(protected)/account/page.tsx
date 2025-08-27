@@ -1,23 +1,30 @@
-import { redirect } from 'next/navigation';
-import { getCustomerSession, getCustomerAccount } from '@/lib/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { User, Mail, Phone, Calendar, LogOut } from 'lucide-react';
-import Link from 'next/link';
+import { redirect } from "next/navigation";
+import { getCustomerSession, getCustomerAccount } from "@/lib/auth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { User, Mail, Phone, Calendar, LogOut } from "lucide-react";
+import Link from "next/link";
 
 export default async function AccountPage() {
   const session = await getCustomerSession();
-  
+
+  // Middleware handles authentication, but we still need the session for the component
   if (!session) {
-    redirect('/account/login');
+    redirect("/account/login");
   }
 
   const customer = await getCustomerAccount(session.customerId);
-  
+
   if (!customer) {
-    redirect('/account/login');
+    redirect("/account/login");
   }
 
   return (
@@ -46,12 +53,20 @@ export default async function AccountPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">First Name</label>
-                    <p className="text-gray-900">{customer.firstName || 'Not provided'}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      First Name
+                    </label>
+                    <p className="text-gray-900">
+                      {customer.firstName || "Not provided"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Last Name</label>
-                    <p className="text-gray-900">{customer.lastName || 'Not provided'}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Last Name
+                    </label>
+                    <p className="text-gray-900">
+                      {customer.lastName || "Not provided"}
+                    </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500 flex items-center gap-1">
@@ -65,18 +80,28 @@ export default async function AccountPage() {
                       <Phone className="h-4 w-4" />
                       Phone
                     </label>
-                    <p className="text-gray-900">{customer.phone || 'Not provided'}</p>
+                    <p className="text-gray-900">
+                      {customer.phone || "Not provided"}
+                    </p>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Marketing Preferences</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Marketing Preferences
+                    </label>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={customer.acceptsMarketing ? "default" : "secondary"}>
-                        {customer.acceptsMarketing ? "Subscribed" : "Not subscribed"}
+                      <Badge
+                        variant={
+                          customer.acceptsMarketing ? "default" : "secondary"
+                        }
+                      >
+                        {customer.acceptsMarketing
+                          ? "Subscribed"
+                          : "Not subscribed"}
                       </Badge>
                     </div>
                   </div>
@@ -98,7 +123,9 @@ export default async function AccountPage() {
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Last Updated</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Last Updated
+                    </label>
                     <p className="text-gray-900">
                       {new Date(customer.updatedAt).toLocaleDateString()}
                     </p>
@@ -164,9 +191,9 @@ export default async function AccountPage() {
               </CardHeader>
               <CardContent>
                 <form action="/api/auth/logout" method="POST">
-                  <Button 
-                    type="submit" 
-                    variant="outline" 
+                  <Button
+                    type="submit"
+                    variant="outline"
                     className="w-full justify-start"
                   >
                     <LogOut className="mr-2 h-4 w-4" />

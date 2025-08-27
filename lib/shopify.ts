@@ -1,44 +1,55 @@
-import 'server-only';
-import { createStorefrontApiClient } from '@shopify/storefront-api-client';
+import "server-only";
+import { createStorefrontApiClient } from "@shopify/storefront-api-client";
 
 export const shopify = createStorefrontApiClient({
   storeDomain: process.env.SHOPIFY_STORE_DOMAIN!,
-  apiVersion: process.env.SHOPIFY_API_VERSION || '2025-07',
+  apiVersion: process.env.SHOPIFY_API_VERSION || "2025-07",
   publicAccessToken: process.env.SHOPIFY_STOREFRONT_API_TOKEN!,
 });
 
 // Helper function to make authenticated customer requests
 export async function customerRequest<T>(
-  query: string, 
-  variables?: Record<string, any>, 
+  query: string,
+  variables?: Record<string, any>,
   accessToken?: string
 ): Promise<T> {
   const headers: Record<string, string> = {};
-  
+
   if (accessToken) {
-    headers['X-Shopify-Storefront-Access-Token'] = accessToken;
+    headers["X-Shopify-Storefront-Access-Token"] = accessToken;
   }
 
-  const { data, errors } = await shopify.request(query, { 
-    variables,
-    headers: Object.keys(headers).length > 0 ? headers : undefined
-  });
-  
-  if (errors) {
-    const errorMessages = Array.isArray(errors) 
-      ? errors.map((e: any) => e.message).join('; ')
-      : String(errors);
-    throw new Error(errorMessages);
+  try {
+    const { data, errors } = await shopify.request(query, {
+      variables,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
+    });
+
+    if (errors) {
+      console.error("Shopify API Errors:", JSON.stringify(errors, null, 2));
+      const errorMessages = Array.isArray(errors)
+        ? errors.map((e: any) => e.message || JSON.stringify(e)).join("; ")
+        : JSON.stringify(errors);
+      throw new Error(errorMessages);
+    }
+
+    return data as T;
+  } catch (error) {
+    console.error("Shopify API Request Error:", error);
+    console.error("Query:", query);
+    console.error("Variables:", variables);
+    throw error;
   }
-  
-  return data as T;
 }
 
-async function gql<T>(query: string, variables?: Record<string, any>): Promise<T> {
+async function gql<T>(
+  query: string,
+  variables?: Record<string, any>
+): Promise<T> {
   const { data, errors } = await shopify.request(query, { variables });
   if (errors) {
-    const errorMessages = Array.isArray(errors) 
-      ? errors.map((e: any) => e.message).join('; ')
+    const errorMessages = Array.isArray(errors)
+      ? errors.map((e: any) => e.message).join("; ")
       : String(errors);
     throw new Error(errorMessages);
   }
@@ -53,8 +64,18 @@ export async function listProducts(limit = 12) {
           id
           handle
           title
-          featuredImage { url altText width height }
-          priceRange { minVariantPrice { amount currencyCode } }
+          featuredImage {
+            url
+            altText
+            width
+            height
+          }
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
         }
       }
     }
@@ -70,14 +91,29 @@ export async function getProductByHandle(handle: string) {
         id
         title
         description
-        featuredImage { url altText width height }
-        images(first: 6) { nodes { url altText width height } }
+        featuredImage {
+          url
+          altText
+          width
+          height
+        }
+        images(first: 6) {
+          nodes {
+            url
+            altText
+            width
+            height
+          }
+        }
         variants(first: 20) {
           nodes {
             id
             title
             availableForSale
-            price { amount currencyCode }
+            price {
+              amount
+              currencyCode
+            }
           }
         }
       }
@@ -95,26 +131,43 @@ export async function cartCreate(variantId: string, quantity = 1) {
           id
           checkoutUrl
         }
-        userErrors { field message }
+        userErrors {
+          field
+          message
+        }
       }
     }
   `;
-  const data = await gql<{ cartCreate: { cart: { id: string; checkoutUrl: string } } }>(q, {
+  const data = await gql<{
+    cartCreate: { cart: { id: string; checkoutUrl: string } };
+  }>(q, {
     lines: [{ merchandiseId: variantId, quantity }],
   });
   return data.cartCreate.cart;
 }
 
-export async function cartLinesAdd(cartId: string, variantId: string, quantity = 1) {
+export async function cartLinesAdd(
+  cartId: string,
+  variantId: string,
+  quantity = 1
+) {
   const q = /* GraphQL */ `
     mutation CartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
       cartLinesAdd(cartId: $cartId, lines: $lines) {
-        cart { id checkoutUrl }
-        userErrors { field message }
+        cart {
+          id
+          checkoutUrl
+        }
+        userErrors {
+          field
+          message
+        }
       }
     }
   `;
-  const data = await gql<{ cartLinesAdd: { cart: { id: string; checkoutUrl: string } } }>(q, {
+  const data = await gql<{
+    cartLinesAdd: { cart: { id: string; checkoutUrl: string } };
+  }>(q, {
     cartId,
     lines: [{ merchandiseId: variantId, quantity }],
   });
@@ -129,8 +182,14 @@ export async function getCart(cartId: string) {
         checkoutUrl
         totalQuantity
         cost {
-          subtotalAmount { amount currencyCode }
-          totalAmount { amount currencyCode }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalAmount {
+            amount
+            currencyCode
+          }
         }
         lines(first: 50) {
           nodes {
@@ -140,8 +199,20 @@ export async function getCart(cartId: string) {
               ... on ProductVariant {
                 id
                 title
-                product { title handle featuredImage { url width height altText } }
-                price { amount currencyCode }
+                product {
+                  title
+                  handle
+                  featuredImage {
+                    url
+                    width
+                    height
+                    altText
+                  }
+                }
+                price {
+                  amount
+                  currencyCode
+                }
               }
             }
           }
@@ -165,17 +236,17 @@ export async function getCollectionByHandle(handle: string) {
             id
             handle
             title
-            featuredImage { 
-              url 
-              altText 
-              width 
-              height 
+            featuredImage {
+              url
+              altText
+              width
+              height
             }
-            priceRange { 
-              minVariantPrice { 
-                amount 
-                currencyCode 
-              } 
+            priceRange {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
             }
           }
         }
@@ -185,5 +256,3 @@ export async function getCollectionByHandle(handle: string) {
   const data = await gql<{ collection: any }>(q, { handle });
   return data.collection;
 }
-
-

@@ -79,7 +79,7 @@ export default function Footer() {
             alt="Logo"
             width={300}
             height={300}
-            className="mb-6 sm:mb-3 w-48 sm:w-auto"
+            className="mb-6 sm:mb-3 w-auto lg:w-64"
           />
           <div className="flex flex-col sm:flex-row justify-between w-full gap-6 sm:gap-0">
             <div className="flex flex-wrap gap-3 text-white text-sm sm:text-base">
