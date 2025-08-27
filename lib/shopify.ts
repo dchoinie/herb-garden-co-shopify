@@ -153,4 +153,37 @@ export async function getCart(cartId: string) {
   return data.cart;
 }
 
+export async function getCollectionByHandle(handle: string) {
+  const q = /* GraphQL */ `
+    query Collection($handle: String!) {
+      collection(handle: $handle) {
+        id
+        title
+        description
+        products(first: 10) {
+          nodes {
+            id
+            handle
+            title
+            featuredImage { 
+              url 
+              altText 
+              width 
+              height 
+            }
+            priceRange { 
+              minVariantPrice { 
+                amount 
+                currencyCode 
+              } 
+            }
+          }
+        }
+      }
+    }
+  `;
+  const data = await gql<{ collection: any }>(q, { handle });
+  return data.collection;
+}
+
 
