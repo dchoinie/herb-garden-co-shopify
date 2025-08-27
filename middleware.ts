@@ -4,6 +4,8 @@ import { verifyCustomerToken } from "@/lib/auth";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  console.log("Middleware processing path:", pathname);
+
   // Define protected routes that require authentication
   const isProtectedRoute =
     pathname.startsWith("/account") &&
@@ -12,10 +14,22 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith("/account/reset-password") &&
     !pathname.startsWith("/account/activate");
 
+  console.log("Path checks:", {
+    startsWithAccount: pathname.startsWith("/account"),
+    startsWithLogin: pathname.startsWith("/account/login"),
+    startsWithRegister: pathname.startsWith("/account/register"),
+    startsWithResetPassword: pathname.startsWith("/account/reset-password"),
+    startsWithActivate: pathname.startsWith("/account/activate"),
+  });
+
+  console.log("Is protected route:", isProtectedRoute);
+
   if (isProtectedRoute) {
+    console.log("Processing protected route:", pathname);
     const customerToken = request.cookies.get("customer_token")?.value;
 
     if (!customerToken) {
+      console.log("No token found, redirecting to login");
       // No token found, redirect to login
       return redirectToLogin(request, pathname);
     }

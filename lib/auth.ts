@@ -156,6 +156,8 @@ export async function customerLogin(
 ): Promise<{ success: boolean; message: string }> {
   const { customerRequest } = await import("./shopify");
 
+  console.log("Attempting to send recovery email for:", email);
+
   // For passwordless authentication, we use customerRecover to send a sign-in link
   // This is Shopify's recommended approach for passwordless auth
   const mutation = /* GraphQL */ `
@@ -181,6 +183,8 @@ export async function customerLogin(
       };
     }>(mutation, { email });
 
+    console.log("CustomerRecover response:", data);
+
     if (data.customerRecover.customerUserErrors.length > 0) {
       console.error(
         "Customer recovery errors:",
@@ -192,6 +196,7 @@ export async function customerLogin(
       };
     }
 
+    console.log("Successfully sent recovery email to:", email);
     return {
       success: true,
       message: "Check your email for a sign-in link",

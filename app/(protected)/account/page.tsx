@@ -21,10 +21,29 @@ export default async function AccountPage() {
     redirect("/account/login");
   }
 
-  const customer = await getCustomerAccount(session.customerId);
+  // Check if we have a real Shopify customer ID or a temporary one
+  const isRealCustomerId =
+    session.customerId.startsWith("gid://shopify/Customer/") &&
+    !session.customerId.includes("Customer/175633"); // Our fake IDs start with timestamp
 
-  if (!customer) {
-    redirect("/account/login");
+  let customer;
+  if (isRealCustomerId) {
+    customer = await getCustomerAccount(session.customerId);
+    if (!customer) {
+      redirect("/account/login");
+    }
+  } else {
+    // Use session data for temporary accounts (from activation)
+    customer = {
+      id: session.customerId,
+      email: session.email,
+      firstName: session.firstName || "",
+      lastName: session.lastName || "",
+      phone: "",
+      acceptsMarketing: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
   }
 
   return (

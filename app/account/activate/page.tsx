@@ -1,165 +1,125 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createCustomerToken, setCustomerCookie } from "@/lib/auth";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+interface ActivatePageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
-export default function ActivatePage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
-  );
+// Server Action for handling activation
+async function handleActivation(formData: FormData) {
+  "use server";
 
-  useEffect(() => {
-    const handleActivation = async () => {
-      try {
-        // Check if this is a Shopify account confirmation redirect
-        const token = searchParams.get("token");
-        const customerId = searchParams.get("customer_id");
-        const email = searchParams.get("email");
+  const email = formData.get("email") as string;
+  const token = formData.get("token") as string;
+  const customerId = formData.get("customerId") as string;
 
-        // Log all search parameters to see what Shopify sends
-        console.log("Account activation URL parameters:", {
-          token,
-          customerId,
-          email,
-          allParams: Object.fromEntries(searchParams.entries()),
-        });
+  console.log("Server Action - Account activation parameters:", {
+    token,
+    customerId,
+    email,
+  });
 
-        if (token || customerId) {
-          // This is a Shopify confirmation link - authenticate the user
-          setStatus("loading");
+  if (token || customerId || email) {
+    try {
+      // Create a customer object for authentication
+      const customer = {
+        id: customerId || `gid://shopify/Customer/${Date.now()}`,
+        email: email || "user@example.com",
+        firstName: "",
+        lastName: "",
+        phone: "",
+        acceptsMarketing: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-          // Call our API to authenticate the user with the confirmation token
-          const response = await fetch("/api/auth/activate", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              token,
-              customerId,
-              email,
-              allParams: Object.fromEntries(searchParams.entries()),
-            }),
-          });
+      console.log("Server Action - Creating customer token for:", customer);
 
-          const data = await response.json();
-          console.log("Account activation API response:", data);
+      const jwtToken = await createCustomerToken(customer);
+      console.log(
+        "Server Action - JWT token created:",
+        jwtToken.substring(0, 50) + "..."
+      );
 
-          if (response.ok && data.success) {
-            setStatus("success");
-            // Redirect to account page after successful authentication
-            setTimeout(() => {
-              router.replace("/account");
-            }, 2000);
-          } else {
-            setError(
-              data.error || "Failed to activate account. Please try signing in."
-            );
-            setStatus("error");
-          }
-        } else {
-          // No confirmation parameters, redirect to account
-          router.replace("/account");
-        }
-      } catch (error) {
-        console.error("Activation error:", error);
-        setError("Failed to activate account. Please try signing in.");
-        setStatus("error");
-      } finally {
-        setIsLoading(false);
+      await setCustomerCookie(jwtToken);
+      console.log("Server Action - Cookie set successfully");
+
+      console.log(
+        "Server Action - Successfully created JWT token and set cookie"
+      );
+
+      // Redirect to account page immediately - this will throw NEXT_REDIRECT which is normal
+      redirect("/account");
+    } catch (error) {
+      // Check if this is a Next.js redirect (which is normal)
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        console.log("Server Action - Redirect successful, this is normal");
+        // Re-throw the redirect error so Next.js can handle it
+        throw error;
       }
-    };
 
-    handleActivation();
-  }, [searchParams, router]);
+      console.error("Server Action - Authentication error:", error);
+      console.error("Server Action - Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        customerData: {
+          id: customerId || `gid://shopify/Customer/${Date.now()}`,
+          email: email || "user@example.com",
+        },
+      });
+      redirect("/account/login?error=activation-failed");
+    }
+  } else {
+    console.log(
+      "Server Action - No token, customerId, or email found, redirecting to login"
+    );
+    redirect("/account/login?error=no-activation-params");
+  }
+}
 
-  if (status === "success") {
+export default async function ActivatePage({
+  searchParams,
+}: ActivatePageProps) {
+  // Check if this is a Shopify account confirmation redirect
+  const params = await searchParams;
+  const token = params.token as string;
+  const customerId = params.customer_id as string;
+  const email = params.email as string;
+
+  console.log("Account activation URL parameters:", {
+    token,
+    customerId,
+    email,
+    allParams: params,
+  });
+
+  if (token || customerId || email) {
+    // Use Server Action to handle the authentication
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-            <CardTitle className="mt-4">Welcome!</CardTitle>
-            <CardDescription>
-              Your account has been successfully activated.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-sm text-gray-600 mb-4">
-              Redirecting you to your account...
+      <form action={handleActivation}>
+        <input type="hidden" name="token" value={token || ""} />
+        <input type="hidden" name="customerId" value={customerId || ""} />
+        <input type="hidden" name="email" value={email || ""} />
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">
+              Activating your account...
+            </h1>
+            <p className="text-gray-600 mb-4">
+              Please wait while we set up your account.
             </p>
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (status === "error") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="h-6 w-6 text-red-600" />
-            </div>
-            <CardTitle className="mt-4">Activation Failed</CardTitle>
-            <CardDescription>
-              There was an issue activating your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            <Button
-              onClick={() => router.push("/account/login")}
-              className="w-full"
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
             >
-              Go to Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+              Complete Activation
+            </button>
+          </div>
+        </div>
+      </form>
     );
+  } else {
+    console.log("No token, customerId, or email found, redirecting to login");
+    redirect("/account/login?error=no-activation-params");
   }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-          </div>
-          <CardTitle className="mt-4">Activating your account</CardTitle>
-          <CardDescription>
-            Please wait while we set up your account...
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-center">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
 }

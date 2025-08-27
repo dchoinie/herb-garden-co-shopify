@@ -85,8 +85,8 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-gray-600 mb-4">
-              Click the link in your email to activate your account, then you
-              can sign in.
+              Click the link in your email to activate your account and sign in
+              automatically.
             </p>
             <Button
               variant="outline"
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         <CardHeader>
           <CardTitle className="text-center">Create your account</CardTitle>
           <CardDescription className="text-center">
-            Enter your email to receive a sign-in link
+            Enter your details to create your account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -213,7 +213,7 @@ export default function RegisterPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending sign-in link..." : "Send sign-in link"}
+              {isLoading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 

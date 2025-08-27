@@ -46,6 +46,8 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
+    console.log("Submitting login form with email:", email);
+
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -55,7 +57,9 @@ export default function LoginPage() {
         body: JSON.stringify({ email }),
       });
 
+      console.log("Login API response status:", response.status);
       const data = await response.json();
+      console.log("Login API response data:", data);
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -71,6 +75,7 @@ export default function LoginPage() {
       setSuccess(true);
       // Don't redirect - show success message instead
     } catch (error) {
+      console.error("Login form error:", error);
       setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
