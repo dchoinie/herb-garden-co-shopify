@@ -4,6 +4,9 @@ import Marquee from '@/components/marquee'
 import FeaturedProduct from '@/components/featuredProduct'
 import Features from '@/components/features'
 import SingleProducts from '@/components/singleProducts'
+import { Heart } from 'lucide-react'
+import Testimonials from '@/components/testimonials'
+import Map from '@/components/map'
 
 const Page = (): JSX.Element => {
   return (
@@ -42,6 +45,11 @@ const Page = (): JSX.Element => {
       </div>
       <Features />
       <SingleProducts />
+      <Marquee backgroundColor="bg-main-green" textColor="text-white">
+        <Heart className="mr-2" /> from our customers
+      </Marquee>
+      <Testimonials />
+      <Map />
     </div>
   )
 }
