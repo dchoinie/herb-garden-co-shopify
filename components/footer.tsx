@@ -71,7 +71,7 @@ const legalLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-main-green py-12">
+    <footer className="bg-main-green py-8 sm:py-12 px-6 lg:px-0">
       <Container>
         <div className="flex flex-col">
           <Image
@@ -79,12 +79,16 @@ export default function Footer() {
             alt="Logo"
             width={300}
             height={300}
-            className="mb-3"
+            className="mb-6 sm:mb-3 w-48 sm:w-auto"
           />
-          <div className="flex justify-between w-full">
-            <div className="flex gap-3 text-white">
+          <div className="flex flex-col sm:flex-row justify-between w-full gap-6 sm:gap-0">
+            <div className="flex flex-wrap gap-3 text-white text-sm sm:text-base">
               {footerNavItems.map((item: FooterNavItem) => (
-                <Link href={item.link} key={item.label}>
+                <Link
+                  href={item.link}
+                  key={item.label}
+                  className="hover:underline"
+                >
                   {item.label}
                 </Link>
               ))}
@@ -92,7 +96,7 @@ export default function Footer() {
             <div className="flex gap-3">
               {footerSocials.map((social, i) => (
                 <Link href={social.link} key={`${social.link}-${i}`}>
-                  <div className="bg-white rounded-full p-2 flex items-center justify-center">
+                  <div className="bg-white rounded-full p-2 flex items-center justify-center hover:bg-gray-100 transition-colors">
                     <div className="text-black">{social.icon}</div>
                   </div>
                 </Link>
@@ -100,28 +104,30 @@ export default function Footer() {
             </div>
           </div>
           <hr className="my-6 border border-gray-300" />
-          <div className="flex justify-between w-full">
-            <div className="flex flex-col w-1/2">
-              <h6 className="text-white text-xl font-bold">Join The Garden</h6>
-              <div className="flex mt-6">
+          <div className="flex flex-col lg:flex-row justify-between w-full gap-6 lg:gap-0">
+            <div className="flex flex-col w-full lg:w-1/2">
+              <h6 className="text-white text-lg sm:text-xl font-bold mb-4 sm:mb-6">
+                Join The Garden
+              </h6>
+              <div className="flex flex-col sm:flex-row">
                 <input
                   type="email"
                   placeholder="Email"
-                  className="px-4 py-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-white/20 text-black border border-white placeholder:text-gray-200 w-full"
+                  className="px-4 py-2 rounded-md sm:rounded-l-md sm:rounded-r-none focus:outline-none focus:ring-2 focus:ring-white/20 text-black border border-white placeholder:text-gray-200 w-full mb-2 sm:mb-0"
                 />
-                <button className="bg-white text-main-green px-6 py-2 rounded-r-md font-medium hover:bg-gray-100 transition-colors whitespace-nowrap rounded-tr-full rounded-br-full">
+                <button className="bg-white text-main-green px-6 py-2 rounded-md sm:rounded-l-none sm:rounded-r-md font-medium hover:bg-gray-100 transition-colors whitespace-nowrap">
                   Sign Up
                 </button>
               </div>
             </div>
-            <div className="flex flex-col text-white text-sm text-right justify-end">
+            <div className="flex flex-col text-white text-xs sm:text-sm text-center lg:text-right justify-end gap-2 sm:gap-0">
               <p>Herb Garden Co &copy; {new Date().getFullYear()}</p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap justify-center lg:justify-end gap-2 sm:gap-3">
                 {legalLinks.map((link, i) => (
                   <Link
                     href={link.link}
                     key={`${link.link}-${i}`}
-                    className="underline"
+                    className="underline hover:no-underline"
                   >
                     {link.label}
                   </Link>
