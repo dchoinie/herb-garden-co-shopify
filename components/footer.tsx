@@ -19,7 +19,7 @@ const footerNavItems: FooterNavItem[] = [
   },
   {
     label: "COAs",
-    link: "/coas",
+    link: "/coa",
   },
   {
     label: "Retail Stores",
@@ -27,11 +27,11 @@ const footerNavItems: FooterNavItem[] = [
   },
   {
     label: "Get In Touch",
-    link: "/contact",
+    link: "/get-in-touch",
   },
   {
     label: "Wholesale Inquiry",
-    link: "/wholesale",
+    link: "/wholesale-inquiry",
   },
 ];
 

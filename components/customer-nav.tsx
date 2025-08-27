@@ -31,8 +31,8 @@ const navItems: NavItems[] = [
         href: "/about-us",
       },
       {
-        label: "Certificats of Analysis",
-        href: "/coas",
+        label: "Certificates of Analysis",
+        href: "/coa",
       },
       {
         label: "Retail Stores",
@@ -49,11 +49,11 @@ const navItems: NavItems[] = [
     subItems: [
       {
         label: "Get In Touch",
-        href: "/contact",
+        href: "/get-in-touch",
       },
       {
         label: "Wholesale Inquiry",
-        href: "/wholesale",
+        href: "/wholesale-inquiry",
       },
     ],
   },
