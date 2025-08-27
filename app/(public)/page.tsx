@@ -1,16 +1,16 @@
-import React, { JSX } from 'react'
-import Hero from '@/components/hero'
-import Marquee from '@/components/marquee'
-import FeaturedProduct from '@/components/featuredProduct'
-import Features from '@/components/features'
-import SingleProducts from '@/components/singleProducts'
-import { Heart } from 'lucide-react'
-import Testimonials from '@/components/testimonials'
-import Map from '@/components/map'
+import React, { JSX } from "react";
+import Hero from "@/components/hero";
+import Marquee from "@/components/marquee";
+import FeaturedProduct from "@/components/featuredProduct";
+import Features from "@/components/features";
+import SingleProducts from "@/components/singleProducts";
+import { Heart } from "lucide-react";
+import Testimonials from "@/components/testimonials";
+import Map from "@/components/map";
 
 const Page = (): JSX.Element => {
   return (
-    <div className="bg-gray-100">
+    <div>
       <Hero />
       <Marquee backgroundColor="bg-olive-green" textColor="text-gray-900">
         Clean, Smart, and Effective THC and CBD Gummies Designed for You
@@ -51,7 +51,7 @@ const Page = (): JSX.Element => {
       <Testimonials />
       <Map />
     </div>
-  )
-}
+  );
+};
 
-export default Page
+export default Page;

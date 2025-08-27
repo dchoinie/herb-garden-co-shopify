@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { getCustomerSession } from "@/lib/auth";
 import { CustomerNav } from "@/components/customer-nav";
+import Footer from "@/components/footer";
 
 const domine = localFont({
   src: "../public/fonts/Domine-VariableFont_wght.ttf",
@@ -40,7 +41,8 @@ export default async function RootLayout({
         className={`${domine.variable} ${funnel.variable} ${funnelItalic.variable} antialiased`}
       >
         <CustomerNav session={session} />
-        {children}
+        <div className="bg-gray-100">{children}</div>
+        <Footer />
       </body>
     </html>
   );

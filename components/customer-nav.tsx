@@ -3,21 +3,66 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import {
-  User,
-  Search,
-  ShoppingCart,
-} from "lucide-react";
+import { User, Search, ShoppingCart } from "lucide-react";
 import { CustomerSession } from "@/lib/auth";
 import Container from "./container";
+import { UserAccountModal } from "./user-account-modal";
 
 interface CustomerNavProps {
   session: CustomerSession | null;
 }
 
+interface NavItems {
+  label: string;
+  href?: string;
+  subItems?: NavItems[];
+}
+
+const navItems: NavItems[] = [
+  {
+    label: "Shop",
+    href: "/products",
+  },
+  {
+    label: "About",
+    subItems: [
+      {
+        label: "About Us",
+        href: "/about-us",
+      },
+      {
+        label: "Certificats of Analysis",
+        href: "/coas",
+      },
+      {
+        label: "Retail Stores",
+        href: "/retail-stores",
+      },
+      {
+        label: "Events",
+        href: "/events",
+      },
+    ],
+  },
+  {
+    label: "Contact",
+    subItems: [
+      {
+        label: "Get In Touch",
+        href: "/contact",
+      },
+      {
+        label: "Wholesale Inquiry",
+        href: "/wholesale",
+      },
+    ],
+  },
+];
+
 export function CustomerNav({ session }: CustomerNavProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -37,24 +82,43 @@ export function CustomerNav({ session }: CustomerNavProps) {
         <div className="flex items-center justify-between h-16">
           {/* Left side - Navigation links */}
           <div className="flex items-center space-x-8 text-white">
-            <Link
-              href="/products"
-              className="font-medium"
-            >
-              Shop
-            </Link>
-            <Link
-              href="/about"
-              className="font-medium"
-            >
-              About
-            </Link>
-            <Link
-              href="/contact"
-              className="font-medium"
-            >
-              Contact
-            </Link>
+            {navItems.map((item) => (
+              <div
+                key={item.label}
+                className="relative group"
+                onMouseEnter={() => setHoveredItem(item.label)}
+                onMouseLeave={() => setHoveredItem(null)}
+              >
+                {item.href ? (
+                  <Link href={item.href} className="font-medium">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span className="font-medium cursor-pointer">
+                    {item.label}
+                  </span>
+                )}
+
+                {/* Dropdown menu */}
+                {item.subItems && hoveredItem === item.label && (
+                  <div
+                    className="absolute top-full left-0 w-48 bg-main-green rounded-md shadow-lg py-2 z-50"
+                    onMouseEnter={() => setHoveredItem(item.label)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                  >
+                    {item.subItems.map((subItem) => (
+                      <Link
+                        key={subItem.label}
+                        href={subItem.href || "#"}
+                        className="block px-4 py-2 text-white hover:underline transition-colors"
+                      >
+                        {subItem.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Center - Logo */}
@@ -72,18 +136,27 @@ export function CustomerNav({ session }: CustomerNavProps) {
 
           {/* Right side - Icons */}
           <div className="flex items-center space-x-4 text-white">
-            <button className="p-2 hover:text-gray-300 transition-colors">
+            <button className="p-2 hover:text-gray-300 transition-colors cursor-pointer">
               <Search className="h-6 w-6" />
             </button>
-            <button className="p-2 hover:text-gray-300 transition-colors">
+            <button
+              className="p-2 hover:text-gray-300 transition-colors cursor-pointer"
+              onClick={() => setIsUserModalOpen(true)}
+            >
               <User className="h-6 w-6" />
             </button>
-            <button className="p-2 hover:text-gray-300 transition-colors">
+            <button className="p-2 hover:text-gray-300 transition-colors cursor-pointer">
               <ShoppingCart className="h-6 w-6" />
             </button>
           </div>
         </div>
       </Container>
+
+      {/* User Account Modal */}
+      <UserAccountModal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+      />
     </div>
   );
 }
