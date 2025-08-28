@@ -64,6 +64,8 @@ export default function LoginPage() {
           setError(
             "Too many login attempts. Please wait a few minutes and try again."
           );
+        } else if (response.status === 403 && data.requiresVerification) {
+          setError(data.error || "Please verify your email before signing in");
         } else {
           setError(data.error || "Login failed");
         }
@@ -92,6 +94,12 @@ export default function LoginPage() {
           <CardDescription className="text-center">
             Enter your email and password to access your account
           </CardDescription>
+          <div className="text-center text-sm text-gray-600">
+            <p>
+              New users: Please check your email for a verification link after
+              registration
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

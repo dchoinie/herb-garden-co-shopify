@@ -558,83 +558,71 @@ export async function customerPasswordRegister(input: {
   phone?: string;
   acceptsMarketing?: boolean;
 }): Promise<{ success: boolean; message: string }> {
-  const { customerRequest } = await import("./shopify");
-
-  // Create customer with the provided password
-  const createMutation = /* GraphQL */ `
-    mutation customerCreate($input: CustomerCreateInput!) {
-      customerCreate(input: $input) {
-        customer {
-          id
-          email
-          firstName
-          lastName
-          phone
-          acceptsMarketing
-          createdAt
-          updatedAt
-        }
-        customerUserErrors {
-          code
-          field
-          message
-        }
-      }
-    }
-  `;
-
   try {
-    const createData = await customerRequest<{
-      customerCreate: {
-        customer: CustomerAccount | null;
-        customerUserErrors: Array<{
-          code: string;
-          field: string;
-          message: string;
-        }>;
-      };
-    }>(createMutation, {
-      input: {
-        email: input.email,
-        password: input.password, // Use the provided password
-        firstName: input.firstName,
-        lastName: input.lastName,
-        phone: input.phone,
-        acceptsMarketing: input.acceptsMarketing || false,
+    // Use Admin API to create customer without triggering welcome email
+    const createUrl = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/2025-07/customers.json`;
+
+    const createResponse = await fetch(createUrl, {
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": SHOPIFY_ADMIN_API_ACCESS_TOKEN,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        customer: {
+          email: input.email,
+          password: input.password,
+          password_confirmation: input.password,
+          first_name: input.firstName,
+          last_name: input.lastName,
+          phone: input.phone,
+          accepts_marketing: input.acceptsMarketing || false,
+          verified_email: false, // Start with unverified email
+          send_email_welcome: false, // Prevent Shopify's welcome email
+        },
+      }),
     });
 
-    // If customer was created successfully
-    if (createData.customerCreate.customer) {
-      return {
-        success: true,
-        message:
-          "Account created successfully! You can now sign in with your email and password.",
-      };
-    }
+    if (!createResponse.ok) {
+      const errorData = await createResponse.json();
+      console.error("Customer creation error:", errorData);
 
-    // If customer creation failed, check if it's because customer already exists
-    const userErrors = createData.customerCreate.customerUserErrors;
-    const customerExists = userErrors.some(
-      (error) =>
-        error.code === "CUSTOMER_DISABLED" ||
-        error.message.toLowerCase().includes("already exists") ||
-        error.message.toLowerCase().includes("customer")
-    );
+      // Check if customer already exists
+      if (errorData.errors?.email?.includes("has already been taken")) {
+        return {
+          success: false,
+          message:
+            "An account with this email already exists. Please sign in instead.",
+        };
+      }
 
-    if (customerExists) {
       return {
         success: false,
-        message:
-          "An account with this email already exists. Please sign in instead.",
+        message: errorData.errors?.email?.[0] || "Failed to create account",
       };
     }
 
-    // Other creation errors
-    console.error("Customer creation errors:", userErrors);
+    const createData = await createResponse.json();
+    const customer = createData.customer;
+
+    if (customer) {
+      // Send our custom verification email instead
+      const emailSent = await sendVerificationEmail(
+        customer.id.toString(),
+        input.email
+      );
+
+      return {
+        success: true,
+        message: emailSent
+          ? "Account created successfully! Please check your email to verify your account before signing in."
+          : "Account created successfully! Please contact support if you don't receive a verification email.",
+      };
+    }
+
     return {
       success: false,
-      message: userErrors[0]?.message || "Failed to create account",
+      message: "Failed to create account",
     };
   } catch (error) {
     console.error("Error during customer registration:", error);
@@ -1263,3 +1251,122 @@ export async function updateCustomer(
     return null;
   }
 }
+
+// Email verification functionality for headless setup
+export async function sendVerificationEmail(
+  customerId: string,
+  email: string
+): Promise<boolean> {
+  try {
+    // Generate a verification token for our custom verification flow
+    const verificationToken = await new SignJWT({
+      customerId,
+      email,
+      purpose: "email-verification",
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("24h")
+      .sign(new TextEncoder().encode(JWT_SECRET));
+
+    // Create verification URL that points to our custom verification page
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const verificationUrl = `${baseUrl}/account/verify-email?token=${encodeURIComponent(
+      verificationToken
+    )}`;
+
+    // Send email using Resend
+    const { Resend } = await import("resend");
+
+    // Check if Resend API key is configured
+    if (!process.env.RESEND_API_KEY) {
+      console.error("RESEND_API_KEY environment variable is not set");
+      return false;
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@yourdomain.com";
+
+    console.log("Attempting to send verification email to:", email);
+    console.log("From email:", fromEmail);
+    console.log("Verification URL:", verificationUrl);
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: "Verify your email address - Herb Garden",
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email - Herb Garden</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🌿 Welcome to Herb Garden!</h1>
+          </div>
+          <div class="content">
+            <h2>Please verify your email address</h2>
+            <p>Thank you for creating an account with Herb Garden! To complete your registration and start shopping, please click the button below to verify your email address.</p>
+            
+            <div style="text-align: center;">
+              <a href="${verificationUrl}" class="button">Verify Email Address</a>
+            </div>
+            
+            <p><strong>Important:</strong> This verification link will expire in 24 hours for your security.</p>
+            
+            <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #667eea;">${verificationUrl}</p>
+            
+            <p>If you didn't create an account with Herb Garden, you can safely ignore this email.</p>
+          </div>
+          <div class="footer">
+            <p>© 2024 Herb Garden. All rights reserved.</p>
+            <p>This email was sent to ${email}</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Verification email sent successfully to:", email);
+    return true;
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+
+    // Log more specific error details for debugging
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+
+    // Check if it's a Resend API error
+    if (error && typeof error === "object" && "message" in error) {
+      console.error("Resend API error:", error);
+    }
+
+    return false;
+  }
+}
+
+export async function isEmailVerified(customerId: string): Promise<boolean> {
+  try {
+    const customer = await getCustomerAccount(customerId);
+    return customer?.verifiedEmail === true;
+  } catch (error) {
+    console.error("Error checking email verification status:", error);
+    return false;
+  }
+}
+
+// Handle Shopify's built-in email verification tokens

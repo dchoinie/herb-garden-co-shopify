@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  customerPasswordRegister,
-  createCustomerToken,
-  setCustomerCookie,
-} from "@/lib/auth";
+import { customerPasswordRegister, sendVerificationEmail } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {

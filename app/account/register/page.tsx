@@ -106,19 +106,29 @@ export default function RegisterPage() {
               Account created successfully!
             </CardTitle>
             <CardDescription>
-              Your account has been created and you can now sign in.
+              Please check your email to verify your account before signing in.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-gray-600 mb-4">
-              You can now sign in to your account using your email and password.
+              We've sent a verification link to your email address. Please click
+              the link to verify your account before you can sign in.
             </p>
-            <Button
-              onClick={() => router.push("/account/login")}
-              className="w-full"
-            >
-              Sign In Now
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={() => router.push("/account/login")}
+                className="w-full"
+              >
+                Sign In Now
+              </Button>
+              <Button
+                onClick={() => router.push("/account/verify-email")}
+                variant="outline"
+                className="w-full"
+              >
+                Need to verify your email?
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

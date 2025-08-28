@@ -61,6 +61,15 @@ export async function POST(request: NextRequest) {
 
       if (!result.success) {
         console.log("Login failed:", result.message);
+        if (result.requiresVerification) {
+          return NextResponse.json(
+            {
+              error: result.message,
+              requiresVerification: true,
+            },
+            { status: 403 }
+          );
+        }
         return NextResponse.json({ error: result.message }, { status: 400 });
       }
 
