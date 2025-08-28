@@ -13,15 +13,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, CheckCircle } from "lucide-react";
+import { Mail, Lock, CheckCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showActivationMessage, setShowActivationMessage] = useState(false);
 
   useEffect(() => {
@@ -30,8 +30,6 @@ export default function LoginPage() {
     const preFilledEmail = searchParams.get("email");
 
     if (message === "account-activated") {
-      setShowActivationMessage(true);
-    } else if (message === "use-signin-link") {
       setShowActivationMessage(true);
     }
 
@@ -54,7 +52,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password }),
       });
 
       console.log("Login API response status:", response.status);
@@ -72,8 +70,12 @@ export default function LoginPage() {
         return;
       }
 
-      setSuccess(true);
-      // Don't redirect - show success message instead
+      // Login successful, redirect to account page
+      if (data.redirect) {
+        router.push(data.redirect);
+      } else {
+        router.push("/account");
+      }
     } catch (error) {
       console.error("Login form error:", error);
       setError("Something went wrong. Please try again.");
@@ -82,47 +84,13 @@ export default function LoginPage() {
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-            <CardTitle className="mt-4">Check your email</CardTitle>
-            <CardDescription>
-              We've sent a sign-in link to {email}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-sm text-gray-600 mb-4">
-              Click the link in your email to sign in to your account. The link
-              will expire in 24 hours.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSuccess(false);
-                setEmail("");
-              }}
-              className="w-full"
-            >
-              Try another email
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center">Sign in to your account</CardTitle>
           <CardDescription className="text-center">
-            Enter your email to receive a sign-in link
+            Enter your email and password to access your account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -131,9 +99,7 @@ export default function LoginPage() {
               <Alert>
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription>
-                  {searchParams.get("message") === "use-signin-link"
-                    ? "Please enter your email to receive a sign-in link."
-                    : "Your account has been activated! Please sign in to continue."}
+                  Your account has been activated! Please sign in to continue.
                 </AlertDescription>
               </Alert>
             )}
@@ -160,12 +126,29 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="pl-10"
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending sign-in link..." : "Send sign-in link"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
               <Button
@@ -174,6 +157,16 @@ export default function LoginPage() {
                 onClick={() => router.push("/account/register")}
               >
                 Create one
+              </Button>
+            </p>
+            <p className="text-sm text-gray-600">
+              Forgot your password?{" "}
+              <Button
+                variant="link"
+                className="p-0 h-auto font-semibold"
+                onClick={() => router.push("/account/reset-password")}
+              >
+                Reset it
               </Button>
             </p>
           </div>

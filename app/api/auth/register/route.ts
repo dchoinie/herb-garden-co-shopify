@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  customerRegister,
+  customerPasswordRegister,
   createCustomerToken,
   setCustomerCookie,
 } from "@/lib/auth";
@@ -21,8 +21,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, firstName, lastName, phone, acceptsMarketing, website } =
-      await request.json();
+    const {
+      email,
+      firstName,
+      lastName,
+      phone,
+      acceptsMarketing,
+      website,
+      password,
+    } = await request.json();
 
     // Honeypot protection - if website field is filled, it's likely a bot
     if (website) {
@@ -74,12 +81,13 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const result = await customerRegister({
+      const result = await customerPasswordRegister({
         email,
         firstName,
         lastName,
         phone: formattedPhone,
         acceptsMarketing: acceptsMarketing || false,
+        password,
       });
 
       if (!result.success) {

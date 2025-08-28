@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, User, Phone, CheckCircle } from "lucide-react";
+import { Mail, User, Phone, Lock, CheckCircle } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -23,6 +23,8 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
+    password: "",
+    confirmPassword: "",
     firstName: "",
     lastName: "",
     phone: "",
@@ -39,13 +41,35 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError("");
 
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          acceptsMarketing: formData.acceptsMarketing,
+          website: formData.website, // Honeypot
+        }),
       });
 
       const data = await response.json();
@@ -78,22 +102,22 @@ export default function RegisterPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="mt-4">Check your email</CardTitle>
+            <CardTitle className="mt-4">
+              Account created successfully!
+            </CardTitle>
             <CardDescription>
-              We've sent an activation link to {formData.email}
+              Your account has been created and you can now sign in.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-gray-600 mb-4">
-              Click the link in your email to activate your account and sign in
-              automatically.
+              You can now sign in to your account using your email and password.
             </p>
             <Button
-              variant="outline"
               onClick={() => router.push("/account/login")}
               className="w-full"
             >
-              Back to Sign In
+              Sign In Now
             </Button>
           </CardContent>
         </Card>
@@ -107,7 +131,7 @@ export default function RegisterPage() {
         <CardHeader>
           <CardTitle className="text-center">Create your account</CardTitle>
           <CardDescription className="text-center">
-            Enter your details to create your account
+            Enter your details to create a new account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,6 +158,44 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
+                  placeholder="Create a password"
+                  className="pl-10"
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    handleInputChange("confirmPassword", e.target.value)
+                  }
+                  placeholder="Confirm your password"
+                  className="pl-10"
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First name</Label>
@@ -151,7 +213,6 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last name</Label>
                 <div className="relative">
@@ -185,22 +246,8 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="acceptsMarketing"
-                checked={formData.acceptsMarketing}
-                onCheckedChange={(checked) =>
-                  handleInputChange("acceptsMarketing", checked as boolean)
-                }
-              />
-              <Label htmlFor="acceptsMarketing" className="text-sm">
-                I want to receive marketing emails about new products and
-                special offers
-              </Label>
-            </div>
-
-            {/* Honeypot field - hidden from users */}
-            <div className="absolute left-[-9999px]">
+            {/* Honeypot field */}
+            <div className="hidden">
               <Label htmlFor="website">Website</Label>
               <Input
                 id="website"
@@ -210,6 +257,19 @@ export default function RegisterPage() {
                 tabIndex={-1}
                 autoComplete="off"
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="acceptsMarketing"
+                checked={formData.acceptsMarketing}
+                onCheckedChange={(checked) =>
+                  handleInputChange("acceptsMarketing", checked as boolean)
+                }
+              />
+              <Label htmlFor="acceptsMarketing" className="text-sm">
+                I want to receive marketing emails and updates
+              </Label>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>

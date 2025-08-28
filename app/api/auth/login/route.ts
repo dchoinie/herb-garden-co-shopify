@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { customerLogin } from "@/lib/auth";
+import { customerPasswordLogin, createCustomerToken } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -22,10 +22,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email } = await request.json();
+    const { email, password } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        { error: "Password is required" },
+        { status: 400 }
+      );
     }
 
     // Additional validation
@@ -37,25 +44,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters long" },
+        { status: 400 }
+      );
+    }
+
     try {
-      console.log("Calling customerLogin with email:", email);
+      console.log("Calling customerPasswordLogin with email:", email);
 
-      // For passwordless auth, we send a sign-in link via email
-      // The actual authentication happens when they click the email link
-      const result = await customerLogin(email);
+      // Authenticate customer with email and password
+      const result = await customerPasswordLogin(email, password);
 
-      console.log("customerLogin result:", result);
+      console.log("customerPasswordLogin result:", result);
 
       if (!result.success) {
         console.log("Login failed:", result.message);
         return NextResponse.json({ error: result.message }, { status: 400 });
       }
 
-      console.log("Login successful, returning success response");
-      return NextResponse.json({
+      if (!result.customer) {
+        console.log("No customer data returned");
+        return NextResponse.json(
+          { error: "Failed to retrieve customer data" },
+          { status: 400 }
+        );
+      }
+
+      console.log("Login successful, creating JWT session");
+
+      // Create JWT token
+      const jwtToken = await createCustomerToken(result.customer);
+
+      // Set the cookie
+      const response = NextResponse.json({
         success: true,
-        message: result.message,
+        message: "Login successful",
+        redirect: "/account",
       });
+
+      // Set the cookie in the response
+      response.cookies.set("customer_token", jwtToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60, // 24 hours
+        path: "/",
+      });
+
+      return response;
     } catch (error) {
       console.error("Login error:", error);
 
