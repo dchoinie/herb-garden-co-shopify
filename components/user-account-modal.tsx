@@ -19,7 +19,7 @@ import {
   Settings,
   ShoppingBag,
 } from "lucide-react";
-import { CustomerSession } from "@/lib/auth";
+import { CustomerSession } from "@/lib/auth-types";
 
 interface UserAccountModalProps {
   isOpen: boolean;

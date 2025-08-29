@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Search, Menu } from "lucide-react";
-import { CustomerSession } from "@/lib/auth";
+import { CustomerSession } from "@/lib/auth-types";
 import Container from "./container";
 import { UserAccountModal } from "./user-account-modal";
 import { useIsMobile } from "@/hooks/use-mobile";

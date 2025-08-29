@@ -7,9 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { Minus, Plus, Trash2, ShoppingCart, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { getMinnesotaTaxFromCart } from "@/lib/minnesota-tax-client";
 
 export function Cart() {
   const {
+    cart,
     items,
     itemCount,
     totalPrice,
@@ -21,6 +23,9 @@ export function Cart() {
     removeItem,
     clearCart,
   } = useCart();
+
+  // Get Minnesota tax information from cart
+  const minnesotaTaxInfo = cart ? getMinnesotaTaxFromCart(cart) : null;
 
   const isEmpty = itemCount === 0;
 
@@ -157,6 +162,26 @@ export function Cart() {
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span>Subtotal</span>
+            <span>
+              $
+              {parseFloat(cart?.cost?.subtotalAmount?.amount || "0").toFixed(2)}{" "}
+              {currency}
+            </span>
+          </div>
+
+          {minnesotaTaxInfo && (
+            <div className="flex justify-between text-sm text-amber-700">
+              <span>Hemp/Canna Tax ({minnesotaTaxInfo.taxPercentage}%)</span>
+              <span>
+                ${minnesotaTaxInfo.taxAmount} {currency}
+              </span>
+            </div>
+          )}
+
+          <Separator />
+
+          <div className="flex justify-between font-medium">
+            <span>Total</span>
             <span>
               ${parseFloat(totalPrice).toFixed(2)} {currency}
             </span>

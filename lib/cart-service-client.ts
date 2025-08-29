@@ -38,11 +38,17 @@ export interface CartCost {
   };
 }
 
+export interface CartAttribute {
+  key: string;
+  value: string;
+}
+
 export interface Cart {
   id: string;
   checkoutUrl: string;
   totalQuantity: number;
   cost: CartCost;
+  attributes?: CartAttribute[];
   lines: {
     nodes: CartLine[];
   };

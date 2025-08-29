@@ -19,6 +19,10 @@ const CART_CREATE_MUTATION = /* GraphQL */ `
             currencyCode
           }
         }
+        attributes {
+          key
+          value
+        }
         lines(first: 50) {
           nodes {
             id
@@ -72,6 +76,10 @@ const CART_LINES_ADD_MUTATION = /* GraphQL */ `
             amount
             currencyCode
           }
+        }
+        attributes {
+          key
+          value
         }
         lines(first: 50) {
           nodes {
@@ -127,6 +135,10 @@ const CART_LINES_UPDATE_MUTATION = /* GraphQL */ `
             currencyCode
           }
         }
+        attributes {
+          key
+          value
+        }
         lines(first: 50) {
           nodes {
             id
@@ -181,6 +193,10 @@ const CART_LINES_REMOVE_MUTATION = /* GraphQL */ `
             currencyCode
           }
         }
+        attributes {
+          key
+          value
+        }
         lines(first: 50) {
           nodes {
             id
@@ -233,6 +249,10 @@ const GET_CART_QUERY = /* GraphQL */ `
           amount
           currencyCode
         }
+      }
+      attributes {
+        key
+        value
       }
       lines(first: 50) {
         nodes {

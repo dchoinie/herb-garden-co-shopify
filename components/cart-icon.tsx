@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -13,16 +12,18 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { Cart } from "./cart";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function CartIcon() {
   const [isOpen, setIsOpen] = useState(false);
   const { itemCount } = useCart();
+  const isMobile = useIsMobile();
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <ShoppingCart className="h-5 w-5" />
+        <button className="p-2 hover:text-gray-300 transition-colors cursor-pointer relative">
+          <ShoppingCart className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`} />
           {itemCount > 0 && (
             <Badge
               variant="destructive"
@@ -31,7 +32,7 @@ export function CartIcon() {
               {itemCount > 99 ? "99+" : itemCount}
             </Badge>
           )}
-        </Button>
+        </button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader>
