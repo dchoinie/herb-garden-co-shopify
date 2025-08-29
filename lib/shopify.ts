@@ -110,6 +110,8 @@ export async function getProductByHandle(handle: string) {
             id
             title
             availableForSale
+            quantityAvailable
+            currentlyNotInStock
             price {
               amount
               currencyCode
@@ -124,6 +126,7 @@ export async function getProductByHandle(handle: string) {
 }
 
 export async function cartCreate(variantId: string, quantity = 1) {
+  console.log("Creating cart with:", { variantId, quantity });
   const q = /* GraphQL */ `
     mutation CartCreate($lines: [CartLineInput!]!) {
       cartCreate(input: { lines: $lines }) {
@@ -139,10 +142,25 @@ export async function cartCreate(variantId: string, quantity = 1) {
     }
   `;
   const data = await gql<{
-    cartCreate: { cart: { id: string; checkoutUrl: string } };
+    cartCreate: {
+      cart: { id: string; checkoutUrl: string };
+      userErrors: { field: string; message: string }[];
+    };
   }>(q, {
     lines: [{ merchandiseId: variantId, quantity }],
   });
+
+  // Check for user errors
+  if (data.cartCreate.userErrors && data.cartCreate.userErrors.length > 0) {
+    console.error("CartCreate user errors:", data.cartCreate.userErrors);
+    throw new Error(
+      `Failed to create cart: ${data.cartCreate.userErrors
+        .map((e) => e.message)
+        .join(", ")}`
+    );
+  }
+
+  console.log("Cart created successfully:", data.cartCreate.cart.id);
   return data.cartCreate.cart;
 }
 
@@ -151,6 +169,7 @@ export async function cartLinesAdd(
   variantId: string,
   quantity = 1
 ) {
+  console.log("Adding to cart:", { cartId, variantId, quantity });
   const q = /* GraphQL */ `
     mutation CartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
       cartLinesAdd(cartId: $cartId, lines: $lines) {
@@ -166,12 +185,100 @@ export async function cartLinesAdd(
     }
   `;
   const data = await gql<{
-    cartLinesAdd: { cart: { id: string; checkoutUrl: string } };
+    cartLinesAdd: {
+      cart: { id: string; checkoutUrl: string };
+      userErrors: { field: string; message: string }[];
+    };
   }>(q, {
     cartId,
     lines: [{ merchandiseId: variantId, quantity }],
   });
+
+  // Check for user errors
+  if (data.cartLinesAdd.userErrors && data.cartLinesAdd.userErrors.length > 0) {
+    console.error("CartLinesAdd user errors:", data.cartLinesAdd.userErrors);
+    throw new Error(
+      `Failed to add item to cart: ${data.cartLinesAdd.userErrors
+        .map((e) => e.message)
+        .join(", ")}`
+    );
+  }
+
+  console.log("CartLinesAdd completed successfully");
   return data.cartLinesAdd.cart;
+}
+
+export async function cartLinesUpdate(
+  cartId: string,
+  lines: { id: string; quantity: number }[]
+) {
+  const q = /* GraphQL */ `
+    mutation CartLinesUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+      cartLinesUpdate(cartId: $cartId, lines: $lines) {
+        cart {
+          id
+          checkoutUrl
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  const data = await gql<{
+    cartLinesUpdate: { cart: { id: string; checkoutUrl: string } };
+  }>(q, {
+    cartId,
+    lines,
+  });
+  return data.cartLinesUpdate.cart;
+}
+
+export async function cartLinesRemove(cartId: string, lineIds: string[]) {
+  console.log("Removing cart lines:", { cartId, lineIds });
+  const q = /* GraphQL */ `
+    mutation CartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
+      cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+        cart {
+          id
+          checkoutUrl
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  const data = await gql<{
+    cartLinesRemove: {
+      cart: { id: string; checkoutUrl: string };
+      userErrors: { field: string; message: string }[];
+    };
+  }>(q, {
+    cartId,
+    lineIds,
+  });
+
+  // Check for user errors
+  if (
+    data.cartLinesRemove.userErrors &&
+    data.cartLinesRemove.userErrors.length > 0
+  ) {
+    console.error(
+      "CartLinesRemove user errors:",
+      data.cartLinesRemove.userErrors
+    );
+    throw new Error(
+      `Failed to remove cart lines: ${data.cartLinesRemove.userErrors
+        .map((e) => e.message)
+        .join(", ")}`
+    );
+  }
+
+  console.log("Successfully removed cart lines");
+  return data.cartLinesRemove.cart;
 }
 
 export async function getCart(cartId: string) {
@@ -231,7 +338,7 @@ export async function getCollectionByHandle(handle: string) {
         id
         title
         description
-        products(first: 10) {
+        products(first: 20) {
           nodes {
             id
             handle
@@ -246,6 +353,14 @@ export async function getCollectionByHandle(handle: string) {
               minVariantPrice {
                 amount
                 currencyCode
+              }
+            }
+            variants(first: 1) {
+              nodes {
+                id
+                quantityAvailable
+                availableForSale
+                currentlyNotInStock
               }
             }
           }

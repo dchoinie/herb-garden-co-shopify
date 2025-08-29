@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Search, ShoppingCart, Menu } from "lucide-react";
+import { User, Search, Menu } from "lucide-react";
 import { CustomerSession } from "@/lib/auth";
 import Container from "./container";
 import { UserAccountModal } from "./user-account-modal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CartIcon } from "./cart-icon";
 import {
   Sheet,
   SheetContent,
@@ -29,7 +30,7 @@ interface NavItems {
 const navItems: NavItems[] = [
   {
     label: "Shop",
-    href: "/products",
+    href: "/shop",
   },
   {
     label: "About",
@@ -210,9 +211,7 @@ export function CustomerNav({ session }: CustomerNavProps) {
             >
               <User className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`} />
             </button>
-            <button className="p-2 hover:text-gray-300 transition-colors cursor-pointer">
-              <ShoppingCart className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`} />
-            </button>
+            <CartIcon />
           </div>
         </div>
       </Container>
