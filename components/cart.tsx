@@ -4,19 +4,21 @@ import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, ShoppingCart, ExternalLink } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { getMinnesotaTaxFromCart } from "@/lib/minnesota-tax-client";
 
-export function Cart() {
+interface CartProps {
+  isDrawer?: boolean;
+  onClose?: () => void;
+}
+
+export function Cart({ isDrawer = false, onClose }: CartProps) {
   const {
     cart,
     items,
     itemCount,
-    totalPrice,
     currency,
-    checkoutUrl,
     loading: isLoading,
     error,
     updateQuantity,
@@ -24,14 +26,15 @@ export function Cart() {
     clearCart,
   } = useCart();
 
-  // Get Minnesota tax information from cart
-  const minnesotaTaxInfo = cart ? getMinnesotaTaxFromCart(cart) : null;
+  // Use Shopify's calculated total
+  const calculatedTotal = parseFloat(cart?.cost?.totalAmount?.amount || "0");
 
   const isEmpty = itemCount === 0;
 
   const handleCheckout = () => {
-    if (isEmpty || !checkoutUrl) return;
-    window.location.href = checkoutUrl;
+    if (isEmpty) return;
+    // Always redirect to cart page for checkout options
+    window.location.href = "/cart";
   };
 
   if (isEmpty) {
@@ -169,43 +172,53 @@ export function Cart() {
             </span>
           </div>
 
-          {minnesotaTaxInfo && (
-            <div className="flex justify-between text-sm text-amber-700">
-              <span>Hemp/Canna Tax ({minnesotaTaxInfo.taxPercentage}%)</span>
-              <span>
-                ${minnesotaTaxInfo.taxAmount} {currency}
-              </span>
-            </div>
-          )}
-
           <Separator />
 
           <div className="flex justify-between font-medium">
             <span>Total</span>
             <span>
-              ${parseFloat(totalPrice).toFixed(2)} {currency}
+              ${calculatedTotal.toFixed(2)} {currency}
             </span>
           </div>
 
-          <Button
-            onClick={handleCheckout}
-            disabled={isLoading}
-            className="w-full"
-            size="lg"
-          >
-            {isLoading ? (
-              "Loading..."
-            ) : (
-              <>
-                Checkout
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-
-          <Button variant="outline" asChild className="w-full">
-            <Link href="/shop">Continue Shopping</Link>
-          </Button>
+          {isDrawer ? (
+            // Drawer buttons - View Cart or Continue Shopping
+            <>
+              <Button asChild className="w-full" size="lg">
+                <Link href="/cart" onClick={onClose}>
+                  View Cart
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full">
+                <Link href="/shop" onClick={onClose}>
+                  Continue Shopping
+                </Link>
+              </Button>
+            </>
+          ) : (
+            // Cart page buttons - Secure Checkout or Continue Shopping
+            <>
+              <Button
+                onClick={handleCheckout}
+                disabled={isLoading}
+                className="w-full"
+                size="lg"
+              >
+                {isLoading ? (
+                  "Loading..."
+                ) : (
+                  <>
+                    Proceed to Checkout
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+              <Button variant="outline" asChild className="w-full">
+                <Link href="/shop">Continue Shopping</Link>
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

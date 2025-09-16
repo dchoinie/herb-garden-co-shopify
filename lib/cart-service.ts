@@ -18,6 +18,10 @@ const CART_CREATE_MUTATION = /* GraphQL */ `
             amount
             currencyCode
           }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
         }
         attributes {
           key
@@ -27,6 +31,10 @@ const CART_CREATE_MUTATION = /* GraphQL */ `
           nodes {
             id
             quantity
+            attributes {
+              key
+              value
+            }
             merchandise {
               ... on ProductVariant {
                 id
@@ -76,6 +84,10 @@ const CART_LINES_ADD_MUTATION = /* GraphQL */ `
             amount
             currencyCode
           }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
         }
         attributes {
           key
@@ -85,6 +97,10 @@ const CART_LINES_ADD_MUTATION = /* GraphQL */ `
           nodes {
             id
             quantity
+            attributes {
+              key
+              value
+            }
             merchandise {
               ... on ProductVariant {
                 id
@@ -134,6 +150,10 @@ const CART_LINES_UPDATE_MUTATION = /* GraphQL */ `
             amount
             currencyCode
           }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
         }
         attributes {
           key
@@ -143,6 +163,10 @@ const CART_LINES_UPDATE_MUTATION = /* GraphQL */ `
           nodes {
             id
             quantity
+            attributes {
+              key
+              value
+            }
             merchandise {
               ... on ProductVariant {
                 id
@@ -192,6 +216,10 @@ const CART_LINES_REMOVE_MUTATION = /* GraphQL */ `
             amount
             currencyCode
           }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
         }
         attributes {
           key
@@ -201,6 +229,10 @@ const CART_LINES_REMOVE_MUTATION = /* GraphQL */ `
           nodes {
             id
             quantity
+            attributes {
+              key
+              value
+            }
             merchandise {
               ... on ProductVariant {
                 id
@@ -249,6 +281,10 @@ const GET_CART_QUERY = /* GraphQL */ `
           amount
           currencyCode
         }
+        totalTaxAmount {
+          amount
+          currencyCode
+        }
       }
       attributes {
         key
@@ -258,6 +294,10 @@ const GET_CART_QUERY = /* GraphQL */ `
         nodes {
           id
           quantity
+          attributes {
+            key
+            value
+          }
           merchandise {
             ... on ProductVariant {
               id

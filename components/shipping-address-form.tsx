@@ -51,49 +51,12 @@ export function ShippingAddressForm({
     zip: "",
   });
 
-  const handleAddressChange = async (
+  const handleAddressChange = (
     field: keyof ShippingAddress,
     value: string
   ) => {
     const newAddress = { ...address, [field]: value };
     setAddress(newAddress);
-
-    // If we have a complete address with state, check for Minnesota tax
-    if (
-      newAddress.provinceCode &&
-      newAddress.city &&
-      newAddress.zip &&
-      cart?.id
-    ) {
-      setLoading(true);
-      try {
-        const response = await fetch("/api/cart/minnesota-tax", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cartId: cart.id,
-            shippingAddress: newAddress,
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Refresh the cart to get updated tax information
-          await refreshCart();
-          console.log("Minnesota tax updated:", data.minnesotaTax);
-        } else {
-          const errorData = await response.json();
-          console.error("Failed to update Minnesota tax:", errorData.error);
-        }
-      } catch (error) {
-        console.error("Error updating Minnesota tax:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     onAddressChange?.(newAddress);
   };
 
@@ -154,9 +117,6 @@ export function ShippingAddressForm({
     <Card className={className}>
       <CardHeader>
         <CardTitle>Shipping Address</CardTitle>
-        {loading && (
-          <p className="text-sm text-amber-600">Calculating Minnesota tax...</p>
-        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">

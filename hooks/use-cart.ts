@@ -149,10 +149,24 @@ export function useCart() {
     clearCart();
   }, [clearCart]);
 
+  // Calculate item count excluding tax items
+  const filteredItems =
+    cart?.lines?.nodes?.filter((item: any) => {
+      // Check if this is a tax item by looking for tax_type attribute
+      return !item.attributes?.some(
+        (attr: any) =>
+          attr.key === "tax_type" && attr.value === "minnesota_hemp_tax"
+      );
+    }) || [];
+
+  const filteredItemCount = filteredItems.reduce((total: number, item: any) => {
+    return total + item.quantity;
+  }, 0);
+
   return {
     cart,
     items: cart?.lines?.nodes || [],
-    itemCount: cart?.totalQuantity || 0,
+    itemCount: filteredItemCount, // Use filtered count instead of totalQuantity
     totalPrice: cart?.cost?.totalAmount?.amount || "0",
     currency: cart?.cost?.totalAmount?.currencyCode || "USD",
     checkoutUrl: cart?.checkoutUrl,
