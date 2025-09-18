@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { getCustomerSession } from "@/lib/auth";
-import { CustomerNav } from "@/components/customer-nav";
+import { Nav } from "@/components/nav";
 import Footer from "@/components/footer";
 
 const domine = localFont({
@@ -33,14 +32,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getCustomerSession();
-
   return (
     <html lang="en">
       <body
         className={`${domine.variable} ${funnel.variable} ${funnelItalic.variable} antialiased`}
       >
-        <CustomerNav session={session} />
+        <Nav />
         <div className="bg-gray-100">{children}</div>
         <Footer />
       </body>

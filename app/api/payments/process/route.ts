@@ -1,39 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
+import { processSquarePayment } from "@/lib/square-payments";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { checkoutId, paymentMethod, amount, currency } = body;
+    const { orderId, sourceId, amount, currency, customerId } = body;
 
-    if (!checkoutId || !paymentMethod || !amount || !currency) {
+    if (!orderId || !sourceId || !amount || !currency) {
       return NextResponse.json(
         { error: "Missing required payment information" },
         { status: 400 }
       );
     }
 
-    // For now, we'll simulate payment processing
-    // In a real implementation, you would integrate with Shopify Payments API
-    console.log("Processing payment:", {
-      checkoutId,
-      paymentMethod: paymentMethod.type,
+    console.log("Processing Square payment:", {
+      orderId,
       amount,
       currency,
     });
 
-    // Simulate payment processing delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Process payment using Square
+    const paymentRequest = {
+      amount: parseFloat(amount),
+      currency: currency,
+      sourceId: sourceId,
+      orderId: orderId,
+      customerId: customerId,
+      autocomplete: true,
+    };
 
-    // Simulate successful payment
-    const transactionId = `txn_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+    const result = await processSquarePayment(paymentRequest);
 
-    return NextResponse.json({
-      success: true,
-      transactionId,
-      message: "Payment processed successfully",
-    });
+    if (result.success) {
+      return NextResponse.json({
+        success: true,
+        transactionId: result.transactionId,
+        paymentId: result.paymentId,
+        orderId: result.orderId,
+        status: result.status,
+        message: "Payment processed successfully",
+      });
+    } else {
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error || "Payment processing failed",
+        },
+        { status: 400 }
+      );
+    }
   } catch (error) {
     console.error("Payment processing error:", error);
     return NextResponse.json(

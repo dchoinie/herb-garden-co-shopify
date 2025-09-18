@@ -1,0 +1,137 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getCatalogApi, isSquareConfigured } from "@/lib/square";
+
+export async function GET(request: NextRequest) {
+  try {
+    if (!isSquareConfigured()) {
+      return NextResponse.json(
+        { error: "Square client not configured" },
+        { status: 500 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get("limit") || "50");
+
+    // Get the catalog API
+    const catalogApi = getCatalogApi();
+    console.log("Catalog API object:", catalogApi);
+    console.log("Catalog API methods:", Object.getOwnPropertyNames(catalogApi));
+    console.log(
+      "Catalog API prototype methods:",
+      Object.getOwnPropertyNames(Object.getPrototypeOf(catalogApi))
+    );
+
+    // Search for all items and their variations
+    const searchRequest = {
+      objectTypes: ["ITEM", "ITEM_VARIATION"],
+      limit: limit,
+    };
+
+    console.log("Search request:", searchRequest);
+    console.log(
+      "Available methods on catalogApi:",
+      Object.getOwnPropertyNames(catalogApi).filter(
+        (name) => typeof catalogApi[name] === "function"
+      )
+    );
+
+    const itemsResponse = await catalogApi.searchCatalogObjects(searchRequest);
+
+    if (itemsResponse.result?.objects) {
+      // Separate items and variations
+      const items = itemsResponse.result.objects.filter(
+        (obj: any) => obj.type === "ITEM"
+      );
+      const variations = itemsResponse.result.objects.filter(
+        (obj: any) => obj.type === "ITEM_VARIATION"
+      );
+
+      // Create a map of variations by item ID for easy lookup
+      const variationsByItemId = variations.reduce(
+        (acc: any, variation: any) => {
+          const itemId = variation.itemVariationData?.itemId;
+          if (itemId) {
+            if (!acc[itemId]) acc[itemId] = [];
+            acc[itemId].push(variation);
+          }
+          return acc;
+        },
+        {}
+      );
+
+      // Transform Square items to our product format
+      const products = items.map((catalogObject: any) => {
+        const itemData = catalogObject.itemData;
+        const itemVariations = variationsByItemId[catalogObject.id] || [];
+
+        return {
+          id: catalogObject.id,
+          handle:
+            itemData?.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ||
+            catalogObject.id,
+          title: itemData?.name || "Untitled Product",
+          description: itemData?.description || "",
+          descriptionHtml: itemData?.description || "",
+          vendor: itemData?.categoryId || "",
+          productType: itemData?.categoryId || "",
+          tags: itemData?.categoryId ? [itemData.categoryId] : [],
+          createdAt: catalogObject.createdAt || new Date().toISOString(),
+          updatedAt: catalogObject.updatedAt || new Date().toISOString(),
+          publishedAt: catalogObject.createdAt || new Date().toISOString(),
+          status: "ACTIVE",
+          featuredImage:
+            itemData?.imageIds && itemData.imageIds.length > 0
+              ? {
+                  url: `https://square-cdn.com/${itemData.imageIds[0]}`,
+                  altText: itemData.name || "Product Image",
+                }
+              : undefined,
+          images: itemData?.imageIds
+            ? itemData.imageIds.map((imageId: string) => ({
+                url: `https://square-cdn.com/${imageId}`,
+                altText: itemData.name || "Product Image",
+              }))
+            : [],
+          variants: itemVariations.map((variation: any) => {
+            const variationData = variation.itemVariationData;
+            const price = variationData?.priceMoney;
+
+            return {
+              id: variation.id,
+              title: variationData?.name || "Default",
+              price: {
+                amount: price ? (price.amount / 100).toFixed(2) : "0.00",
+                currencyCode: price?.currency || "USD",
+              },
+              availableForSale: variationData?.availableForBooking !== false,
+              currentlyNotInStock: variationData?.availableForBooking === false,
+              quantityAvailable:
+                variationData?.availableForBooking !== false ? 999 : 0,
+              selectedOptions: [],
+              sku: variationData?.sku || "",
+            };
+          }),
+          options: [],
+          seo: {
+            title: itemData?.name,
+            description: itemData?.description,
+          },
+        };
+      });
+
+      return NextResponse.json({
+        products,
+        total: products.length,
+      });
+    }
+
+    return NextResponse.json({ products: [], total: 0 });
+  } catch (error) {
+    console.error("Error fetching Square products:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
+  }
+}
