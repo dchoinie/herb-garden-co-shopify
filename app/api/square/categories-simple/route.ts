@@ -3,13 +3,9 @@ import { squareCatalogService } from "@/lib/square-catalog";
 
 export async function GET(request: NextRequest) {
   try {
-    // Always filter to only return products from "Online Products" category
-    const objects = await squareCatalogService.getOnlineProducts();
+    const categories = await squareCatalogService.getCategories();
 
-    // Ensure objects is an array
-    const objectsArray = Array.isArray(objects) ? objects : [];
-
-    // Recursive function to convert all BigInt values to numbers
+    // Convert BigInt values to numbers to avoid serialization errors
     const convertBigInts = (obj: any): any => {
       if (obj === null || obj === undefined) return obj;
 
@@ -32,18 +28,17 @@ export async function GET(request: NextRequest) {
       return obj;
     };
 
-    // Convert BigInt values to numbers to avoid serialization errors
-    const serializedObjects = objectsArray.map(convertBigInts);
+    const serializedCategories = categories.map(convertBigInts);
 
     return NextResponse.json({
       success: true,
       data: {
-        objects: serializedObjects,
-        totalItems: serializedObjects.length,
+        categories: serializedCategories,
+        totalCategories: serializedCategories.length,
       },
     });
   } catch (error) {
-    console.error("Error fetching catalog:", error);
+    console.error("Error fetching categories:", error);
     return NextResponse.json(
       {
         success: false,
