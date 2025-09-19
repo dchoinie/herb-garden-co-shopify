@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package } from "lucide-react";
+import Image from "next/image";
 
 interface SquareProductsProps {
   className?: string;
@@ -120,6 +121,16 @@ function ProductCard({ product }: ProductCardProps) {
   return (
     <Card className="h-full">
       <CardHeader>
+        {itemData.ecomImageUris && itemData.ecomImageUris.length > 0 && (
+          <div className="relative w-full h-48 mb-4">
+            <Image
+              src={itemData.ecomImageUris[0]}
+              alt={itemData.name}
+              fill
+              className="object-cover rounded-lg"
+            />
+          </div>
+        )}
         <CardTitle className="text-lg">{itemData.name}</CardTitle>
         {itemData.description && (
           <CardDescription>{itemData.description}</CardDescription>
