@@ -3,12 +3,6 @@ import { client } from "@/lib/square";
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("Testing Square client connection...");
-    console.log("Environment:", process.env.SQUARE_ENVIRONMENT);
-    console.log("Has access token:", !!process.env.SQUARE_ACCESS_TOKEN);
-    console.log("Client:", client);
-    console.log("Client properties:", Object.keys(client));
-
     // Test basic client properties
     const clientInfo = {
       environment: process.env.SQUARE_ENVIRONMENT,

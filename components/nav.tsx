@@ -15,10 +15,6 @@ import {
 } from "@/components/ui/sheet";
 import { ShoppingCart } from "lucide-react";
 
-interface NavProps {
-  // TODO: Add Square customer session type when ready
-}
-
 interface NavItems {
   label: string;
   href?: string;
