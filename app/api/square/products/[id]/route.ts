@@ -6,18 +6,31 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log("Square products API called");
+
     if (!isSquareConfigured()) {
+      console.error("Square client not configured");
       return NextResponse.json(
-        { error: "Square client not configured" },
+        {
+          error: "Square client not configured",
+          details: {
+            hasToken: !!process.env.SQUARE_ACCESS_TOKEN,
+            hasLocationId: !!process.env.SQUARE_LOCATION_ID,
+            environment: process.env.SQUARE_ENVIRONMENT,
+          },
+        },
         { status: 500 }
       );
     }
 
     const { id } = await params;
+    console.log("Fetching product with ID:", id);
 
     // Get the catalog API and retrieve the specific item from Square
     const catalogApi = getCatalogApi();
     const response = await catalogApi.retrieveCatalogObject(id, true);
+
+    console.log("Square API response:", response);
 
     if (!response.result?.object) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });

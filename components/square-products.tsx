@@ -3,8 +3,11 @@
 import { SquareCatalogObject } from "@/lib/square-catalog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, ImageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Package, ImageIcon, ShoppingCart } from "lucide-react";
 import Image from "next/image";
+import { useCart } from "@/lib/cart-context";
+import { useState } from "react";
 
 interface SquareProductsProps {
   className?: string;
@@ -46,12 +49,26 @@ interface ProductCardProps {
 }
 
 function ProductCard({ product }: ProductCardProps) {
+  const { addToCart, isLoading } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
+
   const formatPrice = (price?: { amount: number; currency: string }) => {
     if (!price) return "Price not set";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: price.currency,
     }).format(price.amount / 100);
+  };
+
+  const handleAddToCart = async () => {
+    setIsAdding(true);
+    try {
+      await addToCart(product, 1);
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   // Cast to any to access the actual Square SDK response structure
@@ -117,6 +134,19 @@ function ProductCard({ product }: ProductCardProps) {
           {itemData.categoryId && (
             <Badge variant="secondary">Categorized</Badge>
           )}
+        </div>
+
+        {/* Add to cart button */}
+        <div className="mt-4">
+          <Button
+            onClick={handleAddToCart}
+            disabled={isAdding || isLoading}
+            className="w-full"
+            size="lg"
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            {isAdding ? "Adding..." : "Add to Cart"}
+          </Button>
         </div>
       </CardContent>
     </Card>

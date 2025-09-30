@@ -14,6 +14,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ShoppingCart } from "lucide-react";
+import { useCart } from "@/lib/cart-context";
+import { Badge } from "@/components/ui/badge";
+import { CartDrawer } from "@/components/cart-drawer";
 
 interface NavItems {
   label: string;
@@ -62,9 +65,10 @@ const navItems: NavItems[] = [
   },
 ];
 
-export function Nav({}: NavProps) {
+export function Nav() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { cart } = useCart();
 
   const renderNavItems = (isMobileMenu = false) => (
     <>
@@ -188,7 +192,21 @@ export function Nav({}: NavProps) {
             <button className="p-2 hover:text-gray-300 transition-colors cursor-pointer">
               <User className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`} />
             </button>
-            <ShoppingCart className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`} />
+            <CartDrawer>
+              <button className="relative p-2 hover:text-gray-300 transition-colors cursor-pointer">
+                <ShoppingCart
+                  className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`}
+                />
+                {cart && cart.items.length > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
+                  >
+                    {cart.items.reduce((sum, item) => sum + item.quantity, 0)}
+                  </Badge>
+                )}
+              </button>
+            </CartDrawer>
           </div>
         </div>
       </Container>

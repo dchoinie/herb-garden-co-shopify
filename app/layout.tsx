@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Nav } from "@/components/nav";
 import Footer from "@/components/footer";
+import { CartProvider } from "@/lib/cart-context";
 
 const domine = localFont({
   src: "../public/fonts/Domine-VariableFont_wght.ttf",
@@ -37,9 +38,11 @@ export default async function RootLayout({
       <body
         className={`${domine.variable} ${funnel.variable} ${funnelItalic.variable} antialiased`}
       >
-        <Nav />
-        <div className="bg-gray-100">{children}</div>
-        <Footer />
+        <CartProvider>
+          <Nav />
+          <div className="bg-gray-100">{children}</div>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

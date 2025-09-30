@@ -7,3 +7,11 @@ export const client = new SquareClient({
       ? SquareEnvironment.Production
       : SquareEnvironment.Sandbox,
 });
+
+export function isSquareConfigured(): boolean {
+  return !!(process.env.SQUARE_ACCESS_TOKEN && process.env.SQUARE_LOCATION_ID);
+}
+
+export function getCatalogApi() {
+  return client.catalogApi;
+}
