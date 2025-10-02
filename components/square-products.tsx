@@ -141,7 +141,7 @@ function ProductCard({ product }: ProductCardProps) {
           <Button
             onClick={handleAddToCart}
             disabled={isAdding || isLoading}
-            className="w-full"
+            className="w-full cursor-pointer"
             size="lg"
           >
             <ShoppingCart className="w-4 h-4 mr-2" />

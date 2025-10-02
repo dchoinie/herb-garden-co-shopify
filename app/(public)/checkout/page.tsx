@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, MapPin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // US States data
 const US_STATES = [
@@ -73,9 +73,41 @@ const US_STATES = [
   { code: "WY", name: "Wyoming" },
 ];
 
+// Declare Square Web Payments SDK types
+interface SquarePayments {
+  card: (options?: Record<string, unknown>) => {
+    attach?: (element: HTMLElement) => void;
+    mount?: (element: HTMLElement) => void;
+    tokenize: () => Promise<{
+      status: string;
+      token?: string;
+      errors?: Array<{ detail: string }>;
+    }>;
+    destroy: () => void;
+  };
+}
+
+declare global {
+  interface Window {
+    Square?: {
+      payments: (
+        applicationId: string,
+        locationId: string,
+        options?: { environment?: string }
+      ) => SquarePayments;
+    };
+  }
+}
+
 export default function CheckoutPage() {
   const { cart, calculateTotals } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [squareLoaded, setSquareLoaded] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const cardContainerRef = useRef<HTMLDivElement>(null);
+  const paymentsRef = useRef<SquarePayments | null>(null);
+  const cardRef = useRef<ReturnType<SquarePayments["card"]> | null>(null);
+
   const [customerInfo, setCustomerInfo] = useState({
     firstName: "",
     lastName: "",
@@ -95,6 +127,174 @@ export default function CheckoutPage() {
     state: "",
     zipCode: "",
   });
+
+  // Load Square Web Payments SDK
+  useEffect(() => {
+    const loadSquareSDK = async () => {
+      try {
+        console.log("Starting Square SDK load...");
+
+        // Get Square configuration
+        const configResponse = await fetch("/api/square/config");
+        const configData = await configResponse.json();
+
+        console.log("Square config response:", configData);
+
+        if (!configData.success) {
+          throw new Error(
+            `Failed to get Square configuration: ${configData.error}`
+          );
+        }
+
+        const { config } = configData;
+        console.log("Square config:", config);
+
+        // Check if required config is present
+        if (!config.applicationId || !config.locationId) {
+          throw new Error("Missing Square application ID or location ID");
+        }
+
+        // Load Square Web Payments SDK
+        const script = document.createElement("script");
+        // Use the sandbox-specific URL to force sandbox environment
+        script.src = "https://sandbox.web.squarecdn.com/v1/square.js";
+        script.async = true;
+        script.onload = async () => {
+          console.log("Square SDK script loaded");
+          console.log("Window.Square available:", !!window.Square);
+          console.log("Card container available:", !!cardContainerRef.current);
+
+          if (window.Square && cardContainerRef.current) {
+            try {
+              console.log("Initializing Square payments...", {
+                applicationId: config.applicationId,
+                locationId: config.locationId,
+                environment: "sandbox",
+              });
+
+              // Initialize Square payments with environment configuration
+              // Try different initialization approach for sandbox
+              let payments;
+              try {
+                // First try with explicit sandbox environment
+                payments = window.Square.payments(
+                  config.applicationId,
+                  config.locationId,
+                  {
+                    environment: "sandbox",
+                  }
+                );
+              } catch (error) {
+                console.log(
+                  "Failed with explicit environment, trying without...",
+                  error
+                );
+                // Fallback to basic initialization
+                payments = window.Square.payments(
+                  config.applicationId,
+                  config.locationId
+                );
+              }
+
+              const card = payments.card({
+                style: {
+                  ".input-container": {
+                    borderColor: "#E0E0E0",
+                    borderRadius: "6px",
+                  },
+                  ".input-container.is-focus": {
+                    borderColor: "#0066CC",
+                  },
+                  ".input-container.is-error": {
+                    borderColor: "#CC0000",
+                  },
+                  ".message-text": {
+                    color: "#666666",
+                  },
+                  ".message-icon": {
+                    color: "#CC0000",
+                  },
+                },
+              });
+
+              console.log("Card object created:", card);
+              console.log("Card is a Promise:", card instanceof Promise);
+
+              // The sandbox SDK returns a Promise, so we need to await it
+              const resolvedCard = await card;
+
+              console.log("Resolved card object:", resolvedCard);
+              console.log("Card methods available:", Object.keys(resolvedCard));
+              console.log(
+                "Attaching card to container:",
+                cardContainerRef.current
+              );
+
+              // Try different attachment methods for sandbox SDK
+              if (typeof resolvedCard.attach === "function") {
+                resolvedCard.attach(cardContainerRef.current);
+              } else if (typeof resolvedCard.mount === "function") {
+                resolvedCard.mount(cardContainerRef.current);
+              } else {
+                console.error("No attach or mount method found on card object");
+                throw new Error(
+                  "Card object does not have attach or mount method"
+                );
+              }
+
+              paymentsRef.current = payments;
+              cardRef.current = resolvedCard;
+              setSquareLoaded(true);
+              console.log("Square payments initialized successfully");
+            } catch (error) {
+              console.error("Failed to initialize Square payments:", error);
+              setPaymentError(
+                `Failed to initialize payment form: ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`
+              );
+            }
+          } else {
+            console.error(
+              "Square SDK not available or card container not ready"
+            );
+            setPaymentError("Square SDK not available");
+          }
+        };
+        script.onerror = () => {
+          console.error("Failed to load Square SDK script");
+          setPaymentError("Failed to load Square payment SDK");
+        };
+
+        document.head.appendChild(script);
+      } catch (error) {
+        console.error("Error loading Square SDK:", error);
+        setPaymentError(
+          `Failed to load payment system: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      }
+    };
+
+    // Wait for the DOM to be ready
+    const timer = setTimeout(() => {
+      if (cardContainerRef.current) {
+        loadSquareSDK();
+      } else {
+        console.error("Card container not ready after timeout");
+        setPaymentError("Payment form container not ready");
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      // Cleanup
+      if (cardRef.current) {
+        cardRef.current.destroy();
+      }
+    };
+  }, []);
 
   // Calculate tax when state changes
   useEffect(() => {
@@ -121,9 +321,17 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!squareLoaded || !cardRef.current) {
+      alert("Payment system is not ready. Please wait a moment and try again.");
+      return;
+    }
+
     setIsProcessing(true);
+    setPaymentError(null);
+
     try {
-      const response = await fetch("/api/checkout/create", {
+      // First, create the order and customer
+      const checkoutResponse = await fetch("/api/checkout/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -134,13 +342,54 @@ export default function CheckoutPage() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to create checkout session");
+      if (!checkoutResponse.ok) {
+        const errorData = await checkoutResponse.json();
+        throw new Error(errorData.error || "Failed to create checkout session");
+      }
 
-      const { checkoutUrl } = await response.json();
-      window.location.href = checkoutUrl;
+      const { orderId, customerId, amount, currency } =
+        await checkoutResponse.json();
+
+      // Tokenize the card
+      const result = await cardRef.current.tokenize();
+
+      if (result.status === "OK") {
+        // Process the payment
+        const paymentResponse = await fetch("/api/payments/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            sourceId: result.token,
+            amount,
+            currency,
+            customerId,
+          }),
+        });
+
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json();
+          throw new Error(errorData.error || "Payment processing failed");
+        }
+
+        const paymentResult = await paymentResponse.json();
+
+        if (paymentResult.success) {
+          // Redirect to success page
+          window.location.href = `/checkout/success?orderId=${orderId}&paymentId=${paymentResult.paymentId}`;
+        } else {
+          throw new Error(paymentResult.error || "Payment failed");
+        }
+      } else {
+        throw new Error(
+          result.errors?.[0]?.detail || "Card tokenization failed"
+        );
+      }
     } catch (error) {
-      console.error("Checkout error:", error);
-      alert("Failed to process checkout. Please try again.");
+      console.error("Payment error:", error);
+      setPaymentError(
+        error instanceof Error ? error.message : "Payment processing failed"
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -425,6 +674,44 @@ export default function CheckoutPage() {
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Card Information *</Label>
+                  <div
+                    ref={cardContainerRef}
+                    id="card-container"
+                    className="min-h-[120px] border border-gray-300 rounded-md p-3"
+                  >
+                    {!squareLoaded && (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        {paymentError
+                          ? `Error: ${paymentError}`
+                          : "Loading payment form..."}
+                      </div>
+                    )}
+                    {squareLoaded && (
+                      <div className="text-green-600 text-sm">
+                        ✓ Payment form loaded successfully
+                      </div>
+                    )}
+                  </div>
+                  {paymentError && (
+                    <p className="text-red-600 text-sm mt-2">{paymentError}</p>
+                  )}
+                </div>
+                <div className="pt-4">
+                  <p className="text-sm text-gray-600">
+                    Your payment information is secure and encrypted. We accept
+                    all major credit cards.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div>
@@ -498,6 +785,7 @@ export default function CheckoutPage() {
                   onClick={handleProceedToPayment}
                   disabled={
                     isProcessing ||
+                    !squareLoaded ||
                     !customerInfo.firstName ||
                     !customerInfo.lastName ||
                     !customerInfo.email ||
@@ -514,7 +802,11 @@ export default function CheckoutPage() {
                   className="w-full"
                   size="lg"
                 >
-                  {isProcessing ? "Processing..." : "Proceed to Payment"}
+                  {isProcessing
+                    ? "Processing..."
+                    : squareLoaded
+                    ? "Complete Purchase"
+                    : "Loading..."}
                 </Button>
               </CardContent>
             </Card>
