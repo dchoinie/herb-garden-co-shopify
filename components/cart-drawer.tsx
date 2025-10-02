@@ -3,7 +3,6 @@
 import { useCart } from "@/lib/cart-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,7 +15,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -34,23 +32,14 @@ export function CartDrawer({ children }: CartDrawerProps) {
     cart,
     updateQuantity,
     removeFromCart,
-    calculateTotals,
     isDrawerOpen,
     setDrawerOpen,
   } = useCart();
-  const [stateCode, setStateCode] = useState("");
-
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       await removeFromCart(itemId);
     } else {
       await updateQuantity(itemId, newQuantity);
-    }
-  };
-
-  const handleCalculateTax = async () => {
-    if (stateCode) {
-      await calculateTotals(stateCode);
     }
   };
 
@@ -154,31 +143,6 @@ export function CartDrawer({ children }: CartDrawerProps) {
                     </div>
                   </div>
                 ))}
-              </div>
-
-              <Separator />
-
-              {/* Tax Calculation */}
-              <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-medium text-sm text-blue-900">
-                  Calculate Tax
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="State Code (e.g., MN)"
-                    value={stateCode}
-                    onChange={(e) => setStateCode(e.target.value.toUpperCase())}
-                    maxLength={2}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleCalculateTax}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Calculate
-                  </Button>
-                </div>
               </div>
 
               <Separator />
