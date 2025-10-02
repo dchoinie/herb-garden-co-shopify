@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, MapPin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -75,9 +76,20 @@ const US_STATES = [
 export default function CheckoutPage() {
   const { cart, calculateTotals } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [address, setAddress] = useState({
+  const [customerInfo, setCustomerInfo] = useState({
     firstName: "",
     lastName: "",
+    email: "",
+    phone: "",
+  });
+  const [address, setAddress] = useState({
+    address1: "",
+    city: "",
+    state: "",
+    zipCode: "",
+  });
+  const [useSeparateBilling, setUseSeparateBilling] = useState(false);
+  const [billingAddress, setBillingAddress] = useState({
     address1: "",
     city: "",
     state: "",
@@ -86,8 +98,13 @@ export default function CheckoutPage() {
 
   // Calculate tax when state changes
   useEffect(() => {
-    if (address.state && cart) {
-      calculateTotals(address.state);
+    if (cart) {
+      if (address.state) {
+        calculateTotals(address.state);
+      } else {
+        // Clear tax data when no state is selected
+        calculateTotals();
+      }
     }
   }, [address.state]); // Only depend on address.state to prevent infinite loops
 
@@ -109,7 +126,12 @@ export default function CheckoutPage() {
       const response = await fetch("/api/checkout/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cart, shippingAddress: address }),
+        body: JSON.stringify({
+          cart,
+          customerInfo,
+          shippingAddress: address,
+          billingAddress: useSeparateBilling ? billingAddress : address,
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to create checkout session");
@@ -153,12 +175,9 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-6">
-            <Card>
+            <Card className="h-fit">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-2" />
-                  Shipping Address
-                </CardTitle>
+                <CardTitle>Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -166,9 +185,9 @@ export default function CheckoutPage() {
                     <Label htmlFor="firstName">First Name *</Label>
                     <Input
                       id="firstName"
-                      value={address.firstName}
+                      value={customerInfo.firstName}
                       onChange={(e) =>
-                        setAddress((prev) => ({
+                        setCustomerInfo((prev) => ({
                           ...prev,
                           firstName: e.target.value,
                         }))
@@ -180,9 +199,9 @@ export default function CheckoutPage() {
                     <Label htmlFor="lastName">Last Name *</Label>
                     <Input
                       id="lastName"
-                      value={address.lastName}
+                      value={customerInfo.lastName}
                       onChange={(e) =>
-                        setAddress((prev) => ({
+                        setCustomerInfo((prev) => ({
                           ...prev,
                           lastName: e.target.value,
                         }))
@@ -191,6 +210,52 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
+                <div>
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={customerInfo.email}
+                    onChange={(e) =>
+                      setCustomerInfo((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone Number (Optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={customerInfo.phone}
+                    onChange={(e) =>
+                      setCustomerInfo((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="pt-4">
+                  <p className="text-sm text-gray-600">
+                    We'll use this information to send you order updates and
+                    receipts.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MapPin className="h-5 w-5 mr-2" />
+                  Shipping Address
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="address1">Address *</Label>
                   <Input
@@ -259,6 +324,105 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Billing Address</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="separate-billing"
+                    checked={useSeparateBilling}
+                    onCheckedChange={(checked) =>
+                      setUseSeparateBilling(checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="separate-billing">
+                    Use a different billing address
+                  </Label>
+                </div>
+
+                {useSeparateBilling && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="billingAddress1">Address *</Label>
+                      <Input
+                        id="billingAddress1"
+                        value={billingAddress.address1}
+                        onChange={(e) =>
+                          setBillingAddress((prev) => ({
+                            ...prev,
+                            address1: e.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="billingCity">City *</Label>
+                        <Input
+                          id="billingCity"
+                          value={billingAddress.city}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              city: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="billingState">State *</Label>
+                        <Select
+                          value={billingAddress.state}
+                          onValueChange={(value) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              state: value,
+                            }))
+                          }
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your state" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {US_STATES.map((state) => (
+                              <SelectItem key={state.code} value={state.code}>
+                                {state.name} ({state.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="billingZipCode">ZIP Code *</Label>
+                        <Input
+                          id="billingZipCode"
+                          value={billingAddress.zipCode}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              zipCode: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!useSeparateBilling && (
+                  <p className="text-sm text-gray-600">
+                    Billing address will be the same as shipping address
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -334,12 +498,18 @@ export default function CheckoutPage() {
                   onClick={handleProceedToPayment}
                   disabled={
                     isProcessing ||
-                    !address.firstName ||
-                    !address.lastName ||
+                    !customerInfo.firstName ||
+                    !customerInfo.lastName ||
+                    !customerInfo.email ||
                     !address.address1 ||
                     !address.city ||
                     !address.state ||
-                    !address.zipCode
+                    !address.zipCode ||
+                    (useSeparateBilling &&
+                      (!billingAddress.address1 ||
+                        !billingAddress.city ||
+                        !billingAddress.state ||
+                        !billingAddress.zipCode))
                   }
                   className="w-full"
                   size="lg"
