@@ -7,12 +7,12 @@ export default function ShippingReturns() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
-        <Link href="/shop">
-          <Button variant="ghost" className="mb-8">
+        <Button asChild variant="ghost" className="mb-8">
+          <Link href="/shop">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Shop
-          </Button>
-        </Link>
+          </Link>
+        </Button>
 
         <h1 className="text-4xl font-bold mb-8">Shipping & Returns</h1>
 

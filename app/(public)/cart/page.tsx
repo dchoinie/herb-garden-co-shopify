@@ -36,9 +36,9 @@ export default function CartPage() {
           <p className="text-gray-600 mb-8">
             Looks like you haven&apos;t added any items to your cart yet.
           </p>
-          <Link href="/shop">
-            <Button size="lg">Continue Shopping</Button>
-          </Link>
+          <Button asChild size="lg">
+            <Link href="/shop">Continue Shopping</Link>
+          </Button>
         </div>
       </div>
     );

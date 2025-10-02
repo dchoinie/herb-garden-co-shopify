@@ -93,16 +93,16 @@ export default function CheckoutSuccessPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/shop">
-              <Button variant="outline" className="w-full sm:w-auto">
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Link href="/shop">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Continue Shopping
-              </Button>
-            </Link>
+              </Link>
+            </Button>
 
-            <Link href="/">
-              <Button className="w-full sm:w-auto">Back to Home</Button>
-            </Link>
+            <Button asChild className="w-full sm:w-auto">
+              <Link href="/">Back to Home</Link>
+            </Button>
           </div>
         </div>
       </div>
