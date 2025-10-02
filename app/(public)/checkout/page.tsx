@@ -241,8 +241,8 @@ export default function CheckoutPage() {
                 </div>
                 <div className="pt-4">
                   <p className="text-sm text-gray-600">
-                    We'll use this information to send you order updates and
-                    receipts.
+                    We&apos;ll use this information to send you order updates
+                    and receipts.
                   </p>
                 </div>
               </CardContent>

@@ -75,9 +75,6 @@ export default function CartPage() {
 
                     <div className="flex-grow">
                       <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {item.description}
-                      </p>
                       <p className="text-lg font-bold">
                         {formatCurrency(item.price)}
                       </p>
